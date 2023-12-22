@@ -499,21 +499,22 @@ class VTSampleDownload:
         b= str(dest_file) + '.txt'
         shutil.copyfile(str(file) + '.txt', str(dest_file) + '.txt')
     else:
-      file = "sample_temp\\" + sha256
-      download_url = candidate.get('link')
-      urllib.urlretrieve(download_url, file)
-      self.write_info(candidate, str(file)+".txt")
-      pe = pefile.PE(file)
-      pe_type = pe.PE_TYPE
-      pe.close()
-      if pe_type == 523:
-        if not os.path.exists(pe64_folder):
-          os.mkdir(pe64_folder)
-        dest_file = os.path.join(pe64_folder,sha256)
-        shutil.copyfile(file, dest_file)
-        shutil.copyfile(str(file) + '.txt', str(dest_file) + '.txt')
-      os.remove(file)
-      os.remove(str(file)+".txt")
+      # file = "sample_temp\\" + sha256
+      # download_url = candidate.get('link')
+      # urllib.urlretrieve(download_url, file)
+      # self.write_info(candidate, str(file)+".txt")
+      # pe = pefile.PE(file)
+      # pe_type = pe.PE_TYPE
+      # pe.close()
+      # if pe_type == 523:
+      #   if not os.path.exists(pe64_folder):
+      #     os.mkdir(pe64_folder)
+      #   dest_file = os.path.join(pe64_folder,sha256)
+      #   shutil.copyfile(file, dest_file)
+      #   shutil.copyfile(str(file) + '.txt', str(dest_file) + '.txt')
+      # os.remove(file)
+      # os.remove(str(file)+".txt")
+      pass
 
   def check_disk_space(self, store_path):
     try:

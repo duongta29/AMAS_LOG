@@ -16,7 +16,7 @@ data_queue = queue.Queue()
 
 
 def get_auth_token(login, password):
-    url = 'http://192.168.143.183:3344/api/auth/login'
+    url = 'http://192.168.14.183:3344/api/auth/login'
     headers = {'Content-Type': 'application/json'}
     payload = {
         'login': login,
@@ -33,7 +33,7 @@ def get_auth_token(login, password):
     
 def upload_and_get_sha256(file_path, token):
     # Địa chỉ API
-    url = "http://192.168.143.183:3344/api/file"
+    url = "http://192.168.14.183:3344/api/file"
 
     # Đặt thông tin file và các tùy chọn
     files = {
@@ -67,7 +67,7 @@ def upload_and_get_sha256(file_path, token):
         return None
     
 def reupload_file(file_path, token, sha256, platform):
-    url = f'http://192.168.143.183:3344/api/object/{sha256}/karton'
+    url = f'http://192.168.14.183:3344/api/object/{sha256}/karton'
     headers = {
         'Authorization': f'Bearer {token}'
     }
@@ -94,7 +94,7 @@ def get_file_paths(folder_path):
     return file_paths
 
 def get_karton_analysis_result(sha256, token):
-    url = f"http://192.168.143.183:3344/api/object/{sha256}/karton"
+    url = f"http://192.168.14.183:3344/api/object/{sha256}/karton"
     headers = {
         "Authorization": f"Bearer {token}"
     }
@@ -129,111 +129,79 @@ def calculate_sha256(file_path):
             sha256_hash.update(block)
     return sha256_hash.hexdigest()
 
-def save_token(token, file_path):
-    sha256 = calculate_sha256(file_path)
-    print(f"Processing {sha256}")
-    check = check_file_uploaded(sha256, token)
-    if check is None:
-        sha256 = None
-            # upload to get emul
-        sha256 = upload_and_get_sha256(file_path, token)
-        if sha256:
-            time.sleep(45)
-            reup = reupload_file(file_path, token, sha256,platform = 2)
-            time.sleep(400)
-            response = get_karton_analysis_result(sha256, token) 
-            if response:
-                amas_dict = {}
+def save_token(sample_folder):
+    login = 'aidev'
+    password = 'Ncs@2023'
+    file_paths = get_file_paths(sample_folder)
+    # file_paths = file_paths[1003:]
+    for file_path in file_paths:
+        # file_name = os.path.basename(file_path)
+        token = get_auth_token(login, password)
+        if token:
+            print("token: ", token)
+            sha256 = calculate_sha256(file_path)
+            check = check_file_uploaded(sha256, token)
+            if check is None:
+                sha256 = None
+                # upload to get emul
+                sha256 = upload_and_get_sha256(file_path, token)
+                if sha256:
+                    time.sleep(30)
+                    reup = reupload_file(file_path, token, sha256,platform = 2)
+                    time.sleep(400)
+                    response = get_karton_analysis_result(sha256, token) 
+                    if response:
+                        amas_dict = {}
+                        for res in response:
+                            if len(res["amas_report"]) != 0:
+                                if len(res["amas_report"]["platform"]) != 0:
+                                    if res["amas_report"]["platform"][0] == "emulator":
+                                        amas_dict["emulator"] = res["amas_report"]
+                                    elif res["amas_report"]["platform"][0] == "sandbox":
+                                        amas_dict["sandbox"] = res["amas_report"]
+                                    else:
+                                        continue
+                        response_file_name = sha256 + '.json'
+                        response_file_path = os.path.join(report_folder, response_file_name)
+                        with open(response_file_path, 'w') as response_file:
+                            json.dump(amas_dict, response_file)
+            if check is not None:
+                response = check
+                check_platform = []
                 for res in response:
                     if len(res["amas_report"]) != 0:
                         if len(res["amas_report"]["platform"]) != 0:
                             if res["amas_report"]["platform"][0] == "emulator":
-                                amas_dict["emulator"] = res["amas_report"]
+                                check_platform.append("emulator")
                             elif res["amas_report"]["platform"][0] == "sandbox":
-                                amas_dict["sandbox"] = res["amas_report"]
-                            else:
-                                continue
+                                check_platform.append("sandbox")
+                        else:
+                            continue
+                if "emulator" not in check_platform:
+                    print("Reup to get emul")
+                    reup = reupload_file(file_path, token, sha256, platform = 1)
+                    time.sleep(30)
+                if "sandbox" not in check_platform:
+                    print("Reup to get sandbox")
+                    reup = reupload_file(file_path, token, sha256, platform = 2)
+                    time.sleep(400)
+                response = get_karton_analysis_result(sha256, token) 
+                if response:
+                    amas_dict = {}
+                    for res in response:
+                        if len(res["amas_report"]) != 0:
+                            if len(res["amas_report"]["platform"]) != 0:
+                                if res["amas_report"]["platform"][0] == "emulator":
+                                    amas_dict["emulator"] = res["amas_report"]
+                                elif res["amas_report"]["platform"][0] == "sandbox":
+                                    amas_dict["sandbox"] = res["amas_report"]
+                                else:
+                                    continue
                 response_file_name = sha256 + '.json'
                 response_file_path = os.path.join(report_folder, response_file_name)
                 with open(response_file_path, 'w') as response_file:
                     json.dump(amas_dict, response_file)
-    if check is not None:
-        response = check
-        check_platform = []
-        for res in response:
-            if len(res["amas_report"]) != 0:
-                if len(res["amas_report"]["platform"]) != 0:
-                    if res["amas_report"]["platform"][0] == "emulator":
-                        check_platform.append("emulator")
-                    elif res["amas_report"]["platform"][0] == "sandbox":
-                        check_platform.append("sandbox")
-                else:
-                    continue
-        if "emulator" not in check_platform:
-            print("Reup to get emul")
-            reup = reupload_file(file_path, token, sha256, platform = 1)
-            time.sleep(45)
-        if "sandbox" not in check_platform:
-            print("Reup to get sandbox")
-            reup = reupload_file(file_path, token, sha256, platform = 2)
-            time.sleep(400)
-        response = get_karton_analysis_result(sha256, token) 
-        if response:
-            amas_dict = {}
-            for res in response:
-                if len(res["amas_report"]) != 0:
-                    if len(res["amas_report"]["platform"]) != 0:
-                        if res["amas_report"]["platform"][0] == "emulator":
-                            amas_dict["emulator"] = res["amas_report"]
-                        elif res["amas_report"]["platform"][0] == "sandbox":
-                            amas_dict["sandbox"] = res["amas_report"]
-                        else:
-                            continue
-        response_file_name = sha256 + '.json'
-        response_file_path = os.path.join(report_folder, response_file_name)
-        with open(response_file_path, 'w') as response_file:
-            json.dump(amas_dict, response_file)
-    
+        else:
+            continue
   
-# save_token(sample_folder)
-
-
-def process_files_in_parallel(sample_folder, num_threads):
-    file_paths = get_file_paths(sample_folder)
-    file_paths = file_paths[1600:]
-    login = 'aidev'
-    password = 'Ncs@2023'
-    token = get_auth_token(login, password)
-    # token = "abc"
-    file_queue = queue.Queue()
-    threads = []
-
-    for file_path in file_paths:
-        file_queue.put(file_path)
-
-    def worker():
-        while True:
-            file_path = file_queue.get()
-            if file_path is None:  # Điều kiện dừng vòng lặp
-                break
-            try:
-                token = get_auth_token(login, password)
-                save_token(token, file_path)
-            except Exception as e:
-                print(e)
-                token = get_auth_token(login, password)
-                save_token(token, file_path)
-            file_queue.task_done()
-    
-    for _ in range(num_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
-    
-    file_queue.join()
-    for _ in range(num_threads):
-        file_queue.put(None)
-    for t in threads:
-        t.join()
-    
-process_files_in_parallel(sample_folder= sample_folder, num_threads = 3)
+save_token(sample_folder)

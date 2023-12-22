@@ -41,7 +41,7 @@ def upload_and_get_sha256(file_path, token):
     options = {
         "upload_as": "*",
         "attributes": [],
-        "config": "{\"platform\":0,\"mode\":\"multi-tasking\"}",
+        "config": "{\"platform\":3,\"mode\":\"multi-tasking\"}",
         "platform": 0,
         "mode": 1
     }

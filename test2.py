@@ -1,29 +1,25 @@
-import os
+import requests
+def get_karton_analysis_result(sha256, token):
+    url = f"http://192.168.14.183:3344/api/object/{sha256}/karton"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
 
-# Đường dẫn đến thư mục chứa các tệp
-folder_path = 'D:\Report_Log'
+    # Thay thế {sha256} và {token} trong URL và header
+    # url = url.replace("{sha256}", sha256)
+    headers["Authorization"] = headers["Authorization"]
 
-# Tên tệp chứa danh sách liên kết
-linklist_file = 'file_done.txt'
+    response = requests.get(url, headers=headers)
 
-# Đường dẫn đến tệp danh sách liên kết
-# linklist_file_path = os.path.join(folder_path, linklist_file)
-
-# Đọc danh sách liên kết từ tệp
-with open(linklist_file, 'r') as file:
-    linklist = [line.strip() for line in file]
-
-# Duyệt qua các tệp trong thư mục
-for file_name in os.listdir(folder_path):
-    file_path = os.path.join(folder_path, file_name)
-
-    # Kiểm tra nếu tệp là tệp JSON
-    if file_name.endswith('.json'):
-        # Bỏ đuôi .json
-        file_name_without_extension = os.path.splitext(file_name)[0]
-
-        # Kiểm tra nếu tên tệp không có trong danh sách liên kết
-        if file_name_without_extension not in linklist:
-            # Thêm vào tệp văn bản
-            with open(linklist_file, 'a') as output_file:
-                output_file.write(file_name_without_extension + '\n')
+    if response.status_code == 200:
+        result = response.json()
+        # amas_report = result['analyses'][0]["amas_report"]
+        # print(result)
+        return result
+    else:
+        print("Error:", response.status_code)
+        return None
+    
+sha256 = "30e2d946d30d0a88de97301661b47e1ba797d7787cf054231fb35144bef4339b"
+token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJsb2dpbiI6ImFpZGV2IiwicGFzc3dvcmRfdmVyIjoiZjExNDFmNDQ1MmNjZGIxMCIsImlkZW50aXR5X3ZlciI6ImJhY2Q3ODdhYzRiM2EwOGEiLCJpYXQiOjE3MDEzMTMzNDQsImF1ZCI6Imh0dHA6Ly8xMjcuMC4wLjEiLCJzY29wZSI6InNlc3Npb24iLCJzdWIiOiJhaWRldiIsImV4cCI6MTcwMTM5OTc0NH0.BxBEGvIdKJYTfEDU2UaItysBijlhAQtcCuciDt4sdR9VRdAreNr4gaW9JUeDNQ_hf8_yhXubqN99P2sQBk-X8Q"
+res = get_karton_analysis_result(sha256, token)
